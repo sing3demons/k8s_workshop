@@ -1,0 +1,131 @@
+Instruction for Workshop 2.1_Job_CronJob:
+Note: This instruction will demonstrate about how to manage use job and cronjob:
+====================================================
+Part0: Generate LINE token:
+1. Access website https://notify-bot.line.me
+2. Choose "Login" with line account
+3. Choose "My Page" and "Generate Token"
+4. Input "Token Name" and Select "Direct LINE Notify" (1-by-1)
+5. Copy TOKEN for Operate Next
+
+====================================================
+Create Job for Monitor System via LINE:
+====================================================
+1. Get command prompt for access folder workshop 2.1 by command :cd /xxxx/WorkShop_2.1_Job_CronJob
+2. Check File on WorkShop by command: "cd ~/kubernetes_202405/WorkShop_2.1_Job_CronJob/"
+3. Open job.yml file and Edit Environment (vi job.yml)
+	        env:
+        - name: TITLE
+          value: "BOT:Praparn L."					==> Input Your Name
+        - name: INTERVAL
+          value: "10000"									==> Input Time Interval in Job (ms)
+        - name: HEAP_HIGH
+          value: "40"											==> Input High Monitor HEAP %
+        - name: MEM_HIGH
+          value: "20"											==> Input High Memory %
+        - name: SH_OS
+          value: "Y"											==> Input "Y"
+        - name: TOKEN
+          value: "pKCqcUWGmCpEoNBDNZxsnt5OT4kP41F2BK3QsdSdMDw"	==> Input LINE TOKEN
+
+4. Create Job by command:
+	kubectl create -f job.yml
+	kubectl get jobs -o wide
+	kubectl get pods -o wide
+  kubectl describe jobs/linenotify
+
+  ****After Complete Pods will gone. We can view all complete by command***
+  kubectl get pods -o wide
+
+
+5. Check Detail of Posds by command:
+	  ****After 30 Second. Job will get delete from kubernetes by feature: TTLAfterFinished
+  kubectl get pods -o wide
+
+6. Monitor Result on LINE Application: (5 Min)
+
+7. Open job_notify_cron.yml file and Edit Environment (vi job_notify_cron.yml):
+	        env:
+        - name: TITLE
+          value: "BOT NOTIFY:Praparn L."					==> Input Your Name
+        - name: INTERVAL
+          value: "10000"									==> Input Time Interval in Job (ms)
+        - name: HEAP_HIGH
+          value: "20"											==> Input 20%
+        - name: MEM_HIGH
+          value: "20"											==> Input 20%
+        - name: SH_OS
+          value: "Y"											==> Input "N"
+        - name: TOKEN
+          value: "pKCqcUWGmCpEoNBDNZxsnt5OT4kP41F2BK3QsdSdMDw"	==> Input LINE TOKEN
+
+8. Create Job by command: (Monitor 5 - 6 min)
+	kubectl create -f job_notify_cron.yml
+	kubectl get cronjob -o wide
+  watch kubectl get jobs
+
+9. Check Detail of Job by command:
+	kubectl describe cronjob/linenotify
+
+10. Monitor Result on LINE Application:
+
+11. Delete Cronjob by command:
+kubectl delete -f job_notify_cron.yml 
+
+====================================================
+Create Parallel Job for access redis and pull:
+====================================================
+1. Get command prompt for access folder workshop 2.1 by command :cd /xxxx/WorkShop_2.1_Job_CronJob
+2. Check File on WorkShop by command: "cd ~"
+3. Create Redis and Redis's service by command:
+  kubectl apply -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/redis-pods.yml
+  kubectl apply -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/redis-service.yml
+
+4. Check redis pods and service by command:
+  kubectl get pods
+  kubectl get svc
+
+5. Run redis-cli and prepare vaule on redis by command:
+  kubectl run -i --tty temp --image redis --command "/bin/sh"
+
+  -------------
+  Pods's inside
+  -------------
+  redis-cli -h redis
+  redis:6379> rpush job2 "BTC"
+  (integer) 1
+  redis:6379> rpush job2 "ETH"
+  (integer) 2
+  redis:6379> rpush job2 "USDT"
+  (integer) 3
+  redis:6379> rpush job2 "BNB"
+  (integer) 4
+  redis:6379> rpush job2 "SOL"
+  (integer) 5
+  redis:6379> rpush job2 "USDC"
+  (integer) 6
+  redis:6379> rpush job2 "XRP"
+  (integer) 7
+  redis:6379> rpush job2 "DOGE"
+  (integer) 8
+  redis:6379> rpush job2 "TON"
+  (integer) 9
+  redis:6379> lrange job2 0 -1
+  -------------
+  exit
+  exit
+
+ 6. Run job by command:
+  kubectl apply -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/job-parallel.yml
+  kubectl describe jobs/job-parallel
+  kubectl get job
+
+ 7. View log from job by command:
+  kubectl get pods
+  kubectl logs pods/<pods name>
+ 
+ 9. CleanUp lab:
+  kubectl delete pods/temp
+  kubectl delete -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/job-parallel.yml
+  kubectl delete -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/redis-pods.yml
+  kubectl delete -f https://raw.githubusercontent.com/praparn/kubernetes_202405/master/WorkShop_2.1_Job_CronJob/parallelism/redis-service.yml
